@@ -25,7 +25,7 @@ BEGIN
 END //
 DELIMITER ;
 
-SELECT * FROM student_list;
+SELECT * FROM student_list;  
 
 CREATE TABLE course_list(course_id INT PRIMARY KEY,course_name VARCHAR(100));
 SELECT * FROM course_list;
@@ -74,7 +74,13 @@ SELECT s.student_id,c.course_id,m.student_mark
 FROM student_mark m
 JOIN student_list s ON s.student_id=m.student_id
 JOIN course_list c ON c.course_id=m.course_id;
+#_________________________________________________________________________________________________________________________________________
 
+#3NF
+CREATE  TABLE  result_3nf(student_id INT,course_id INT,mark INT,
+PRIMARY KEY(student_id,course_id),
+FOREIGN KEY (student_id) REFERENCES student_list(student_id),
+FOREIGN KEY (course_id) REFERENCES course_list(course_id));
 
 
 /*
@@ -98,7 +104,7 @@ to minimize redundancy and dependency of data
     * 4NF
     * 5NF
     
-1NF (First Normal Form) 
+1)1NF (First Normal Form) 
 	-> Each column is unique in 1NF
 				(or)
     -> Each table cell should have Single value
@@ -124,7 +130,7 @@ Each column must contain atomic (single) values
 	Alex     | 36  | Human Resource
 ____________________________________________________________________________________________________________________
 
-2NF(Second Normal Form)
+1) 2NF(Second Normal Form)
 			   _____________ Should satisfy 1NF	
     ----------/
 			  \______________  Should not allowed Partial Dependency 
@@ -141,6 +147,199 @@ ________________________________________________________________________________
     
     In 2NF, we start from a single table and split it into related tables to remove partial dependency. Easier viewing is a 
     benefit, not the goal.
+______________________________________________________________________________________________________________________________
+3)Third Normal Form (3NF)
+
+			   _____________   Should satisfy 2NF	
+    ----------/
+			  \______________  Should not have Transitive Function 
+              
+    A--------------B yes
+    B--------------C yes
+    A--------------C No
     
+    ----------------------------------
+	| Situation              | 3NF?  |
+	| ---------------------- | ----- |
+	| PK → Non-key           | ✅ Yes |
+	| (PK1, PK2) → Non-key   | ✅ Yes |
+	| Non-key → Non-key      | ❌ No  |
+	| PK → Non-key → Non-key | ❌ No  |
+	|  (pk1,pk2,pk3)         |   yes |
+    | Non-key → Prime-key    | yes   |
+    ----------------------------------
+    
+    
+1.If we should not followed this what heppend ?
+---->Data base will have duplicate data inconsistency in (Update,insert,delete)
+
+2.Why this design is CORRECT (3NF logic)
+
+student_list → master table
+
+course_list → master table
+
+result_3nf → relation/transaction table
+
+3.This is proper 3NF design:
+
+No redundancy
+
+No transitive dependency
+
+Clear parent–child relationship
+
+4. Visual memory
+Index exists	             FK allowed
+(student_id, course_id)	        ❌ course_id alone
+(student_id)	                ✅
+(course_id)                 	✅
+
+_______________________________________________________________________________________________________________________________________
+4)BCNF (Boyce codd Normal Form)
+
+			   _____________   Strick version 3 NF	
+    ----------/
+			  \______________  also called as 3.5 NF
+
+Even 3NF sometime share can still be inconsistency BCNF says
+BCNF rule
+	For every function dependency (X->Y) x must be a super key.if not BCNF is violation
+    
+3NF (SLIGHTLY RELAXED RULE)
+	A table  in 3NF it for every X->Y at least one super key
+    x is super key
+        (or)
+	Y is prime attribute
+    
+Normal Form	Condition
+	3NF	X or Y  ----> must be a key
+	BCNF	    ----> X must be a key
+    
+   1. BCNF says  table have only candidate key it was wrong understand
+   2. coulmn must a candidate key 
+   
+Big Table in BCNF (Multiple Determinants)
+EmployeeLogin
+----------------------------------
+emp_id        PRIMARY KEY
+email         UNIQUE
+username      UNIQUE
+password
+created_at
+
+❌ Big table NOT in BCNF (for contrast)
+EmployeeDept
+----------------------------------
+emp_id PRIMARY KEY
+emp_name
+dept_id
+dept_name
+    
+✅ Correct:
+A BCNF table can have many non-key columns.
+BCNF does not limit the table to only keys.
+
+Example (BCNF):
+
+Student(student_id PK, name, place)
+
+✅ Correct:
+
+Column order has no meaning in normalization
+
+BCNF does not care about “first column”
+
+BCNF cares only about this rule:
+
+For every functional dependency X → Y, X must be a super key
+
+
+BCNF is about dependencies, not column position or number of columns.
+Student
+---------------------------
+name
+student_place
+student_id   PRIMARY KEY 
+
+BCNF depends only on functional dependencies, not on column order or how many columns the table has.
+
+Every BCNF table is automatically 3NF.But not every 3NF is in BCNF 
+The table is in 3NF because there is no transitive dependency .it is in BCNF because the primary key determines all the attribute
+
+
+All the function dependencies satisfy BCNF must have primary key(mandatory) UK(option)
+
+____________________________________________________________________________________________________________________________________________
+5) 4NF
+	
+			   _____________   Should be in BCNF
+    ----------/
+			  \______________  It should not have multi value dependency(MVD)
+              
+              FOR one value A there are multiple independent value in B and cache C 
+              B depends only A 
+              c depends only A 
+              
+              But B and C are independly each other  this create redundancy
+              
+              Before 4 NF table have atleast 3 column .if not have 3 column not sastify
+              
+		Table 1
+              student    Hobby        Language
+              John      football      English
+			  John      football      French
+			  John      chess         English
+			  John      chess         French
+              
+		Table 2 
+			  student         Hobby
+              John            Footbal
+              john            chess
+              
+		Table 3
+			 student            Language
+             john                English
+             john                french
+             
+             
+             No redundancy
+             No Multiple value dependency  This satisfies 4Nf
+             
+4NF remove multivalue dependencies A->B and A->C  exist then B and C must not be stored together in one table because they 
+are independent 
+
+3NF  remove transitive dependency (A->B->C)
+4NF  remove multiple value dependency (A->B and A->C)
+_________________________________________________________________________________________________________________________________________
+
+Base De-Normalized Table
+=========================
+EmpId,EmpName,DepId,DepName,projId,ProjName,ManagerId,ManagerName
+	
+						Normilized Table
+							   |
+                               |
+							  \ /
+2NF 
+|---------------|    | ------------------|   |--------------|    |------------------|
+|Employee Table |    |Department Table   |   |Project Table |    |  Manager Table   |
+|---------------|    |-------------------|   |--------------|    |------------------|
+|   EmpId -p	|	 | 	     DepId -p	 |	 |	 ProjId  -p |    |   MangerId -p    |
+|   EmpName		|	 |	     DepName	 |	 |	 ProjName   |    |  ManagerName     |
+--------------------------------------------------------------------------------------
+4NF 
+Employee Project Table		Employee Department Table        Employee Manager Table 
+EmpId-F                     EmpId -F                             EmpId-F 
+DepId -F                    DepId  -F                            ManagerId -F  
+projId 
+
+
+
+
+
+
+
+
 
 */
